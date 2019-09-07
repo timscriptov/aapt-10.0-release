@@ -214,7 +214,7 @@ bool isValidResourceType(const String8& type)
         || type == "transition" || type == "font"
         || type == "drawable" || type == "layout"
         || type == "values" || type == "xml" || type == "raw"
-        || type == "color" || type == "menu" || type == "mipmap";
+        || type == "color" || type == "menu" || type == "navigation" || type == "mipmap";
 }
 
 static status_t parsePackage(Bundle* bundle, const sp<AaptAssets>& assets,
@@ -1328,6 +1328,7 @@ status_t buildResources(Bundle* bundle, const sp<AaptAssets>& assets, sp<ApkBuil
     sp<ResourceTypeSet> raws;
     sp<ResourceTypeSet> colors;
     sp<ResourceTypeSet> menus;
+    sp<ResourceTypeSet> navigations;
     sp<ResourceTypeSet> mipmaps;
     sp<ResourceTypeSet> fonts;
 
@@ -1341,6 +1342,7 @@ status_t buildResources(Bundle* bundle, const sp<AaptAssets>& assets, sp<ApkBuil
     ASSIGN_IT(raw);
     ASSIGN_IT(color);
     ASSIGN_IT(menu);
+    ASSIGN_IT(navigation);
     ASSIGN_IT(mipmap);
     ASSIGN_IT(font);
 
@@ -1365,6 +1367,7 @@ status_t buildResources(Bundle* bundle, const sp<AaptAssets>& assets, sp<ApkBuil
             !applyFileOverlay(bundle, assets, &raws, "raw") ||
             !applyFileOverlay(bundle, assets, &colors, "color") ||
             !applyFileOverlay(bundle, assets, &menus, "menu") ||
+            !applyFileOverlay(bundle, assets, &menus, "navigation") ||
             !applyFileOverlay(bundle, assets, &fonts, "font") ||
             !applyFileOverlay(bundle, assets, &mipmaps, "mipmap")) {
         return UNKNOWN_ERROR;
@@ -1491,7 +1494,14 @@ status_t buildResources(Bundle* bundle, const sp<AaptAssets>& assets, sp<ApkBuil
             hasErrors = true;
         }
     }
-
+    
+    if (navigations != NULL) {
+        err = makeFileResources(bundle, assets, &table, navigations, "navigation");
+        if (err != NO_ERROR) {
+            hasErrors = true;
+        }
+    }
+    
     if (hasErrors) {
         return UNKNOWN_ERROR;
     }
@@ -1680,7 +1690,28 @@ status_t buildResources(Bundle* bundle, const sp<AaptAssets>& assets, sp<ApkBuil
         }
         err = NO_ERROR;
     }
+    
+    if (navigations != NULL) {
+        ResourceDirIterator it(menus, String8("navigation"));
+        while ((err=it.next()) == NO_ERROR) {
+            String8 src = it.getFile()->getPrintableSource();
+            err = compileXmlFile(bundle, assets, String16(it.getBaseName()),
+                    it.getFile(), &table, xmlFlags);
+            if (err == NO_ERROR && it.getFile()->hasData()) {
+                ResXMLTree block;
+                block.setTo(it.getFile()->getData(), it.getFile()->getSize(), true);
+                checkForIds(src, block);
+            } else {
+                hasErrors = true;
+            }
+        }
 
+        if (err < NO_ERROR) {
+            hasErrors = true;
+        }
+        err = NO_ERROR;
+    }
+    
     if (fonts != NULL) {
         ResourceDirIterator it(fonts, String8("font"));
         while ((err=it.next()) == NO_ERROR) {
@@ -3260,6 +3291,9 @@ writeProguardForLayouts(ProguardKeepSet* keep, const sp<AaptAssets>& assets)
             tagAttrPairs = &kXmlTagAttrPairs;
         } else if ((dirName == String8("menu")) || (strncmp(dirName.string(), "menu-", 5) == 0)) {
             startTags.add(String8("menu"));
+            tagAttrPairs = NULL;
+        } else if ((dirName == String8("navigation")) || (strncmp(dirName.string(), "navigation-", 5) == 0)) {
+            startTags.add(String8("navigation"));
             tagAttrPairs = NULL;
         } else if (dirName == kTransition || (strncmp(dirName.string(), kTransitionPrefix.string(),
                         kTransitionPrefix.size()) == 0)) {

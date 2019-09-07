@@ -2937,7 +2937,7 @@ status_t ResourceTable::flatten(Bundle* bundle, const sp<const ResourceFilter>& 
             if (configTypeName == "drawable" || configTypeName == "layout"
                     || configTypeName == "color" || configTypeName == "anim"
                     || configTypeName == "interpolator" || configTypeName == "animator"
-                    || configTypeName == "xml" || configTypeName == "menu"
+                    || configTypeName == "xml" || configTypeName == "menu" || configTypeName == "navigation"
                     || configTypeName == "mipmap" || configTypeName == "raw") {
                 configTypeName = "1complex";
             } else {
