@@ -1367,7 +1367,7 @@ status_t buildResources(Bundle* bundle, const sp<AaptAssets>& assets, sp<ApkBuil
             !applyFileOverlay(bundle, assets, &raws, "raw") ||
             !applyFileOverlay(bundle, assets, &colors, "color") ||
             !applyFileOverlay(bundle, assets, &menus, "menu") ||
-            !applyFileOverlay(bundle, assets, &menus, "navigation") ||
+            !applyFileOverlay(bundle, assets, &navigations, "navigation") ||
             !applyFileOverlay(bundle, assets, &fonts, "font") ||
             !applyFileOverlay(bundle, assets, &mipmaps, "mipmap")) {
         return UNKNOWN_ERROR;
